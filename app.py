@@ -2,55 +2,71 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-st.set_page_config(page_title='Anuncios de coches en EE. UU.', layout='wide')
+st.set_page_config(page_title='Anuncios de coches en EE. UU.')
 
 
 @st.cache_data
 def load_data():
-    """Lee el conjunto de datos de anuncios de venta de coches."""
-    return pd.read_csv('vehicles_us.csv')
+    """Lee el conjunto de datos y añade la columna del fabricante."""
+    df = pd.read_csv('vehicles_us.csv')
+    # El fabricante es la primera palabra del modelo (p. ej. 'ford f-150' -> 'ford')
+    df['manufacturer'] = df['model'].str.split().str[0]
+    return df
 
 
 car_data = load_data()
 
-# Encabezado
-st.header('Panel de anuncios de venta de coches en EE. UU.')
-st.write(
-    'Explora el conjunto de datos de anuncios de vehículos usados: '
-    'marca las casillas para construir los gráficos.'
+st.title('Panel de anuncios de venta de coches en EE. UU.')
+
+# --- Visor de datos ---
+st.header('Visor de datos')
+include_small = st.checkbox('Incluir fabricantes con menos de 1000 anuncios', value=True)
+
+if not include_small:
+    ads_per_manufacturer = car_data['manufacturer'].value_counts()
+    big_manufacturers = ads_per_manufacturer[ads_per_manufacturer >= 1000].index
+    car_data = car_data[car_data['manufacturer'].isin(big_manufacturers)]
+
+st.dataframe(car_data)
+
+# --- Tipos de vehículo por fabricante ---
+st.header('Tipos de vehículo por fabricante')
+fig = px.histogram(car_data, x='manufacturer', color='type')
+st.plotly_chart(fig, width='stretch')
+
+# --- Histograma de condición vs año del modelo ---
+st.header('Histograma de `condition` vs `model_year`')
+fig = px.histogram(car_data, x='model_year', color='condition')
+st.plotly_chart(fig, width='stretch')
+
+# --- Comparar la distribución de precios entre fabricantes ---
+st.header('Comparar la distribución de precios entre fabricantes')
+manufacturers = sorted(car_data['manufacturer'].unique())
+manufacturer_1 = st.selectbox(
+    'Selecciona el fabricante 1',
+    manufacturers,
+    index=manufacturers.index('chevrolet') if 'chevrolet' in manufacturers else 0,
 )
+manufacturer_2 = st.selectbox(
+    'Selecciona el fabricante 2',
+    manufacturers,
+    index=manufacturers.index('hyundai') if 'hyundai' in manufacturers else 0,
+)
+normalize = st.checkbox('Normalizar histograma', value=True)
 
-# Métricas generales
-col1, col2, col3 = st.columns(3)
-col1.metric('Anuncios', f'{len(car_data):,}')
-col2.metric('Precio mediano', f"${car_data['price'].median():,.0f}")
-col3.metric('Kilometraje mediano (millas)', f"{car_data['odometer'].median():,.0f}")
+compare_data = car_data[car_data['manufacturer'].isin([manufacturer_1, manufacturer_2])]
+fig = px.histogram(
+    compare_data,
+    x='price',
+    color='manufacturer',
+    nbins=30,
+    histnorm='percent' if normalize else None,
+    barmode='overlay',
+)
+st.plotly_chart(fig, width='stretch')
 
-# Vista previa de los datos
-if st.checkbox('Mostrar los datos'):
-    st.dataframe(car_data.head(100))
-
-# Histograma
-build_histogram = st.checkbox('Construir un histograma')
-if build_histogram:
-    st.write('Creación de un histograma para el conjunto de datos de anuncios de venta de coches')
-    hist_column = st.selectbox(
-        'Columna para el histograma',
-        ['odometer', 'price', 'model_year', 'days_listed'],
-    )
-    fig = px.histogram(car_data, x=hist_column, nbins=100, title=f'Distribución de {hist_column}')
-    st.plotly_chart(fig, width='stretch')
-
-# Gráfico de dispersión
-build_scatter = st.checkbox('Construir un gráfico de dispersión')
-if build_scatter:
-    st.write('Creación de un gráfico de dispersión entre el odómetro y el precio')
-    fig = px.scatter(
-        car_data,
-        x='odometer',
-        y='price',
-        color='condition',
-        opacity=0.5,
-        title='Relación entre odómetro y precio',
-    )
+# --- Gráfico de dispersión ---
+st.header('Relación entre odómetro y precio')
+if st.checkbox('Construir gráfico de dispersión', value=True):
+    fig = px.scatter(car_data, x='odometer', y='price', color='condition', opacity=0.5)
     st.plotly_chart(fig, width='stretch')

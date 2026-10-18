@@ -6,10 +6,11 @@ Aplicación web construida con **Streamlit**, **pandas** y **Plotly** que permit
 
 ## Funcionalidad
 
-- Encabezado y métricas generales (número de anuncios, precio mediano y kilometraje mediano).
-- Casilla para mostrar una vista previa de los datos.
-- Casilla para construir un **histograma** interactivo; se puede elegir la columna (odómetro, precio, año del modelo o días publicados).
-- Casilla para construir un **gráfico de dispersión** de odómetro frente a precio, coloreado según el estado del vehículo.
+- **Visor de datos:** tabla con todos los anuncios y una casilla para incluir o excluir a los fabricantes con menos de 1000 anuncios (el filtro se aplica a todo el panel).
+- **Tipos de vehículo por fabricante:** histograma apilado con el número de anuncios de cada fabricante por tipo de vehículo.
+- **Histograma de `condition` vs `model_year`:** distribución del año del modelo según el estado del vehículo.
+- **Comparar la distribución de precios entre fabricantes:** dos listas desplegables para elegir los fabricantes y una casilla para normalizar el histograma (en porcentaje).
+- **Gráfico de dispersión:** relación entre el odómetro y el precio, coloreada según el estado del vehículo.
 
 ## Estructura del proyecto
 
